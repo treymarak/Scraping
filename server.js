@@ -3,6 +3,7 @@ var app = express();
 var bodyParser = require('body-parser');
 var logger = require('morgan');
 var mongoose = require('mongoose');
+var mongojs = require("mongojs");
 var request = require('request');
 var cheerio = require('cheerio');
 
@@ -12,15 +13,16 @@ app.use(bodyParser.urlencoded({
 }));
 app.use(express.static('public'));
 
+// var databaseUrl = "scraper";
+// var collections = ["scrapedData"];
 
+// var db = mongojs(databaseUrl, collections);
+// db.on("error", function(error) {
+//   console.log("Database Error:", error);
+// });
 
-var db = mongojs(databaseUrl, collections);
-db.on("error", function(error) {
-  console.log("Database Error:", error);
-});
-
-var Note = require('./models/Note.js');
-var Article = require('./models/Article.js');
+// var Note = require('./models/Note.js');
+// var Article = require('./models/Article.js');
 
 
 app.get('/', function(req, res) {
@@ -29,24 +31,27 @@ app.get('/', function(req, res) {
 
 
 app.get('/scrape', function(req, res) {
+	// console.log(res);
   request("https://news.ycombinator.com/", function(error, response, html) {
+		// console.log(html);
     var $ = cheerio.load(html);
-    $('article h2').each(function(i, element) {
-
+    $('tbody tr').each(function(i, element) {
 				var result = {};
 
-				result.title = $(this).children('a').text();
-				result.link = $(this).children('a').attr('href');
+				result.title = $(this).children('td').children('a').text();
+				result.link = $(this).children('td').children('a').attr('href').text()
+				console.log(result);
+				// var entry = new Article (result);
 
-				var entry = new Article (result);
+				// console.log(this);
 
-				entry.save(function(err, doc) {
-				  if (err) {
-				    console.log(err);
-				  } else {
-				    console.log(doc);
-				  }
-				});
+				// entry.save(function(err, doc) {
+				//   if (err) {
+				//     console.log(err);
+				//   } else {
+				//     console.log(doc);
+				//   }
+				// });
 
 
     });
@@ -55,28 +60,28 @@ app.get('/scrape', function(req, res) {
 });
 
 
-app.get('/articles', function(req, res){
-	Article.find({}, function(err, doc){
-		if (err){
-			console.log(err);
-		} else {
-			res.json(doc);
-		}
-	});
-});
+// app.get('/articles', function(req, res){
+// 	Article.find({}, function(err, doc){
+// 		if (err){
+// 			console.log(err);
+// 		} else {
+// 			res.json(doc);
+// 		}
+// 	});
+// });
 
 
-app.get('/articles/:id', function(req, res){
-	Article.findOne({'_id': req.params.id})
-	.populate('note')
-	.exec(function(err, doc){
-		if (err){
-			console.log(err);
-		} else {
-			res.json(doc);
-		}
-	});
-});
+// app.get('/articles/:id', function(req, res){
+// 	Article.findOne({'_id': req.params.id})
+// 	.populate('note')
+// 	.exec(function(err, doc){
+// 		if (err){
+// 			console.log(err);
+// 		} else {
+// 			res.json(doc);
+// 		}
+// 	});
+// });
 
 
 app.post('/articles/:id', function(req, res){
